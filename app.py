@@ -35,51 +35,32 @@ def display_year(value):
     return match.group(1) if match else "Year unavailable"
 
 
-@st.cache_data(show_spinner=False)
-def get_movie_titles():
-    movies, _ = load_data()
-    return sorted(
-        movies["title"].dropna().astype(str).drop_duplicates().tolist(),
-        key=str.casefold,
-    )
-
-
-@st.cache_data(show_spinner="Finding similar movies…")
-def get_recommendations(movie_index):
-    _, matrix = load_data()
-    scores = cosine_similarity(matrix[movie_index], matrix).ravel()
-    scores[movie_index] = -1
-    best_indices = scores.argsort()[-5:][::-1]
-    return [
-        (int(index), max(0.0, float(scores[index])))
-        for index in best_indices
-    ]
-
 st.markdown("""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 :root { --bg:#0b0d12; --panel:#12151d; --muted:#969bab; --accent:#c7f36b; }
-.stApp { background: radial-gradient(ellipse at 50% -30%, #253023 0%, #11151b 37%, #0b0d12 72%); color:#f4f5f7; font-family:system-ui,sans-serif; }
+.stApp { background: radial-gradient(ellipse at 50% -30%, #253023 0%, #11151b 37%, #0b0d12 72%); color:#f4f5f7; font-family:'DM Sans',sans-serif; }
 [data-testid="stHeader"] { background:transparent; }
 .block-container { max-width:1100px; padding-top:2.2rem; padding-bottom:4rem; }
-.brand { font:800 17px system-ui,sans-serif; letter-spacing:-.5px; color:#fff; }
+.brand { font:800 17px Manrope,sans-serif; letter-spacing:-.5px; color:#fff; }
 .brand span { color:var(--accent); }
 .hero { text-align:center; padding:4.1rem 0 2.1rem; }
 .eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:2.6px; font-size:11px; font-weight:700; }
-.hero h1 { font:800 clamp(42px,7vw,72px)/1.05 system-ui,sans-serif; letter-spacing:-4px; margin:17px 0 14px; color:#f7f7f4; }
+.hero h1 { font:800 clamp(42px,7vw,72px)/1.05 Manrope,sans-serif; letter-spacing:-4px; margin:17px 0 14px; color:#f7f7f4; }
 .hero h1 em { color:var(--accent); font-style:normal; }
 .hero p { color:#a9adba; font-size:16px; margin:0 auto; max-width:540px; }
 .search-label { color:#e6e8ed; font-size:13px; font-weight:600; margin:0 0 9px; }
 [data-testid="stSelectbox"] > div > div { background:#171a22; border:1px solid #30343e; border-radius:12px; min-height:54px; }
 [data-testid="stSelectbox"] input { color:#fff; }
 .selected { background:linear-gradient(120deg,#1b2119,#151821); border:1px solid #313a2b; border-radius:18px; padding:25px 29px; margin:26px 0 35px; }
-.selected-title { font:700 28px system-ui,sans-serif; letter-spacing:-.8px; margin:5px 0 9px; }
+.selected-title { font:700 28px Manrope,sans-serif; letter-spacing:-.8px; margin:5px 0 9px; }
 .metadata { color:#b4b7c2; font-size:13px; }
-.section-title { font:700 22px system-ui,sans-serif; letter-spacing:-.5px; margin:0 0 5px; }
+.section-title { font:700 22px Manrope,sans-serif; letter-spacing:-.5px; margin:0 0 5px; }
 .section-sub { color:#969bab; font-size:13px; margin-bottom:18px; }
 .movie-card { min-height:165px; height:100%; box-sizing:border-box; background:linear-gradient(145deg,#171a22,#11141b); border:1px solid #292d37; border-radius:16px; padding:21px; margin-bottom:13px; transition:border-color .2s, transform .2s; }
 .movie-card:hover { border-color:#71864e; transform:translateY(-2px); }
-.rank { color:var(--accent); font:700 11px system-ui,sans-serif; letter-spacing:1.4px; text-transform:uppercase; }
-.movie-title { color:#f5f5f6; font:700 18px system-ui,sans-serif; margin:13px 0 9px; }
+.rank { color:var(--accent); font:700 11px Manrope,sans-serif; letter-spacing:1.4px; text-transform:uppercase; }
+.movie-title { color:#f5f5f6; font:700 18px Manrope,sans-serif; margin:13px 0 9px; }
 .movie-meta { color:#9da1ae; font-size:12px; }
 .score { color:var(--accent); font-size:12px; font-weight:600; float:right; }
 .footer { text-align:center; color:#707584; font-size:11px; margin-top:35px; }
@@ -106,49 +87,8 @@ except Exception as error:
     st.stop()
 
 st.markdown('<div class="search-label">What have you been watching?</div>', unsafe_allow_html=True)
-
-
-def clear_movie_choice():
-    st.session_state["movie_choice"] = None
-
-
-titles = get_movie_titles()
-search_query = st.text_input(
-    "Search movies",
-    placeholder="Type a movie title…",
-    label_visibility="collapsed",
-    key="movie_search",
-    on_change=clear_movie_choice,
-).strip()
-
-selected_title = None
-if search_query:
-    query = search_query.casefold()
-    matches = []
-    for title in titles:
-        if query in title.casefold():
-            matches.append(title)
-            if len(matches) == 21:
-                break
-
-    if matches:
-        if len(matches) > 20:
-            st.caption("Showing up to 20 matches. Type a few more letters to narrow your search.")
-        selected_title = st.selectbox(
-            "Matching titles",
-            matches[:20],
-            index=None,
-            placeholder="Choose a movie…",
-            label_visibility="collapsed",
-            key="movie_choice",
-        )
-    else:
-        st.info("No matching movies found. Try another title.")
-else:
-    st.markdown(
-        '<div style="text-align:center;color:#828795;font-size:13px;padding:15px 0 35px">Start typing a title to see matching movies.</div>',
-        unsafe_allow_html=True,
-    )
+titles = movies["title"].dropna().drop_duplicates().sort_values(key=lambda values: values.str.casefold()).tolist()
+selected_title = st.selectbox("Search movies", titles, index=None, placeholder="Type a movie title…", label_visibility="collapsed")
 if selected_title:
     selected_index = int(movies.index[movies["title"] == selected_title][0])
     movie = movies.iloc[selected_index]
@@ -160,14 +100,17 @@ if selected_title:
       <div class="metadata">{year} &nbsp; · &nbsp; {rating}</div>
     </div>''', unsafe_allow_html=True)
 
-    recommendations = get_recommendations(selected_index)
+    scores = cosine_similarity(tfidf_matrix[selected_index], tfidf_matrix).ravel()
+    scores[selected_index] = -1
+    best = scores.argsort()[-5:][::-1]
     st.markdown('<div class="section-title">Made for your watchlist</div><div class="section-sub">Movies with a similar feel, picked from our library.</div>', unsafe_allow_html=True)
     columns = st.columns(2, gap="medium")
-    for rank, (index, score) in enumerate(recommendations, start=1):
+    for rank, index in enumerate(best, start=1):
         recommendation = movies.iloc[index]
         value = recommendation.get("vote_average")
         rating_text = f"★ {float(value):.1f}" if pd.notna(value) and float(value) > 0 else "Unrated"
         movie_year = display_year(recommendation.get("release_date"))
+        score = scores[index]
         with columns[(rank - 1) % 2]:
             st.markdown(f'''<div class="movie-card">
               <div class="rank">PICK 0{rank}<span class="score">{score:.0%} match</span></div>
