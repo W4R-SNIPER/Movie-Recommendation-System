@@ -35,14 +35,6 @@ def display_year(value):
     return match.group(1) if match else "Year unavailable"
 
 
-@st.cache_data(show_spinner=False)
-def get_movie_titles():
-    movies, _ = load_data()
-    return sorted(
-        movies["title"].dropna().astype(str).drop_duplicates().tolist(),
-        key=str.casefold,
-    )
-
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
@@ -58,7 +50,7 @@ st.markdown("""
 .hero h1 em { color:var(--accent); font-style:normal; }
 .hero p { color:#a9adba; font-size:16px; margin:0 auto; max-width:540px; }
 .search-label { color:#e6e8ed; font-size:13px; font-weight:600; margin:0 0 9px; }
-[data-testid="stSelectbox"] > div > div, [data-testid="stTextInput"] > div > div { background:#171a22; border:1px solid #30343e; border-radius:12px; min-height:54px; }
+[data-testid="stSelectbox"] > div > div { background:#171a22; border:1px solid #30343e; border-radius:12px; min-height:54px; }
 [data-testid="stSelectbox"] input { color:#fff; }
 .selected { background:linear-gradient(120deg,#1b2119,#151821); border:1px solid #313a2b; border-radius:18px; padding:25px 29px; margin:26px 0 35px; }
 .selected-title { font:700 28px Manrope,sans-serif; letter-spacing:-.8px; margin:5px 0 9px; }
@@ -95,49 +87,8 @@ except Exception as error:
     st.stop()
 
 st.markdown('<div class="search-label">What have you been watching?</div>', unsafe_allow_html=True)
-
-
-def clear_movie_choice():
-    st.session_state["movie_choice"] = None
-
-
-titles = get_movie_titles()
-search_query = st.text_input(
-    "Search movies",
-    placeholder="Type a movie title…",
-    label_visibility="collapsed",
-    key="movie_search",
-    on_change=clear_movie_choice,
-).strip()
-
-selected_title = None
-if search_query:
-    query = search_query.casefold()
-    matches = []
-    for title in titles:
-        if query in title.casefold():
-            matches.append(title)
-            if len(matches) == 11:
-                break
-
-    if matches:
-        if len(matches) > 10:
-            st.caption("Showing 10 matches. Add a few letters to narrow your search.")
-        selected_title = st.selectbox(
-            "Matching titles",
-            matches[:10],
-            index=None,
-            placeholder="Choose a movie…",
-            label_visibility="collapsed",
-            key="movie_choice",
-        )
-    else:
-        st.info("No matching movies found. Try another title.")
-else:
-    st.markdown(
-        '<div style="text-align:center;color:#828795;font-size:13px;padding:15px 0 35px">Start typing a title to see up to 10 matches.</div>',
-        unsafe_allow_html=True,
-    )
+titles = movies["title"].dropna().drop_duplicates().sort_values(key=lambda values: values.str.casefold()).tolist()
+selected_title = st.selectbox("Search movies", titles, index=None, placeholder="Type a movie title…", label_visibility="collapsed")
 if selected_title:
     selected_index = int(movies.index[movies["title"] == selected_title][0])
     movie = movies.iloc[selected_index]
