@@ -12,7 +12,7 @@ MOVIES_PATH = ROOT / "dataset" / "final_movies.csv"
 MATRIX_PATH = ROOT / "models" / "tfidf_matrix.pkl"
 
 st.set_page_config(
-    page_title="ReelGood · Movie Finder",
+    page_title="W4R SNIPER · Movie Finder",
     page_icon="🎬",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -70,7 +70,7 @@ div.stButton > button:hover { background:#d8ff8d; color:#10130c; border:0; }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="brand">reel<span>good</span> <span style="color:#747987;font-weight:500">/ MOVIE FINDER</span></div>', unsafe_allow_html=True)
+st.markdown('<div class="brand">W4R <span>SNIPER</span> <span style="color:#747987;font-weight:500">/ MOVIE FINDER</span></div>', unsafe_allow_html=True)
 st.markdown('''<div class="hero">
 <div class="eyebrow">Your next favorite is in here</div>
 <h1>Find your next<br><em>great watch.</em></h1>
