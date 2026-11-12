@@ -10,6 +10,7 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parent
 RECOMMENDATIONS_PATH = ROOT / "models" / "recommendations.sqlite"
 DATABASE_URI = f"{RECOMMENDATIONS_PATH.as_uri()}?mode=ro"
+DISPLAY_RECOMMENDATIONS = 3
 
 st.set_page_config(
     page_title="W4R SNIPER · Movie Finder",
@@ -43,7 +44,7 @@ def load_movie_and_recommendations(title):
             return None, []
 
         movie_index, movie_title, release_date, vote_average, raw_recommendations = movie
-        recommendations = json.loads(raw_recommendations)
+        recommendations = json.loads(raw_recommendations)[:DISPLAY_RECOMMENDATIONS]
         recommendation_indices = [int(item[0]) for item in recommendations]
         placeholders = ",".join("?" for _ in recommendation_indices)
         rows = connection.execute(
