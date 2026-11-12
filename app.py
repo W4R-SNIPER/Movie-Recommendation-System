@@ -24,28 +24,11 @@ def open_database():
     return sqlite3.connect(DATABASE_URI, uri=True)
 
 
-@st.cache_data(ttl=300, show_spinner=False)
-def search_titles(query, limit=50):
-    query = query.strip()
-    if not query:
-        return []
-
-    escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+@st.cache_data(show_spinner="Loading movie titles…")
+def load_titles():
     with closing(open_database()) as connection:
-        prefix = [row[0] for row in connection.execute(
-            """SELECT DISTINCT title FROM movies
-               WHERE title LIKE ? ESCAPE '\\'
-               ORDER BY title COLLATE NOCASE LIMIT ?""",
-            (escaped + "%", limit),
-        )]
-        if prefix:
-            return prefix
-
         return [row[0] for row in connection.execute(
-            """SELECT DISTINCT title FROM movies
-               WHERE title LIKE ? ESCAPE '\\'""" +
-            " ORDER BY title COLLATE NOCASE LIMIT ?",
-            ("%" + escaped + "%", limit),
+            "SELECT DISTINCT title FROM movies ORDER BY title COLLATE NOCASE"
         )]
 
 
@@ -102,7 +85,6 @@ st.markdown("""
 .search-label { color:#e6e8ed; font-size:13px; font-weight:600; margin:0 0 9px; }
 [data-testid="stSelectbox"] > div > div { background:#171a22; border:1px solid #30343e; border-radius:12px; min-height:54px; }
 [data-testid="stSelectbox"] input { color:#fff; }
-[data-testid="stTextInput"] input { background:#171a22; border:1px solid #30343e; border-radius:12px; min-height:54px; color:#fff; }
 .selected { background:linear-gradient(120deg,#1b2119,#151821); border:1px solid #313a2b; border-radius:18px; padding:25px 29px; margin:26px 0 35px; }
 .selected-title { font:700 28px Manrope,sans-serif; letter-spacing:-.8px; margin:5px 0 9px; }
 .metadata { color:#b4b7c2; font-size:13px; }
@@ -133,6 +115,7 @@ try:
         raise FileNotFoundError(RECOMMENDATIONS_PATH)
     with closing(open_database()) as connection:
         connection.execute("SELECT 1 FROM movies LIMIT 1").fetchone()
+    titles = load_titles()
 except FileNotFoundError as error:
     st.error(f"Required project file not found: {error.filename}")
     st.stop()
@@ -141,16 +124,7 @@ except Exception as error:
     st.stop()
 
 st.markdown('<div class="search-label">What have you been watching?</div>', unsafe_allow_html=True)
-query = st.text_input("Search movies", placeholder="Type a movie title…", label_visibility="collapsed")
-matches = search_titles(query)
-selected_title = None
-if query.strip() and matches:
-    selected_title = st.selectbox(
-        "Matching movies", matches, index=None,
-        placeholder="Choose a movie…", label_visibility="collapsed",
-    )
-elif query.strip():
-    st.caption("No matching titles found.")
+selected_title = st.selectbox("Search movies", titles, index=None, placeholder="Type a movie title…", label_visibility="collapsed")
 if selected_title:
     movie, recommendations = load_movie_and_recommendations(selected_title)
     _, movie_title, release_date, vote_average = movie
