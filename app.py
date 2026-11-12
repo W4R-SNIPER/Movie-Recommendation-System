@@ -2,9 +2,9 @@ from pathlib import Path
 import pickle
 import re
 
+import numpy as np
 import pandas as pd
 import streamlit as st
-from sklearn.metrics.pairwise import cosine_similarity
 
 
 ROOT = Path(__file__).resolve().parent
@@ -25,7 +25,27 @@ def load_data():
     with MATRIX_PATH.open("rb") as file:
         matrix = pickle.load(file)
     movies["title"] = movies["title"].fillna("Untitled")
-    return movies, matrix
+    titles = sorted(movies["title"].drop_duplicates().tolist(), key=str.casefold)
+    searchable_titles = [(title.casefold(), title) for title in titles]
+    title_to_index = {}
+    for index, title in enumerate(movies["title"]):
+        title_to_index.setdefault(title, index)
+    return movies, matrix, searchable_titles, title_to_index
+
+
+def find_title_matches(searchable_titles, query, limit=50):
+    """Return a short list for the UI instead of rendering the entire catalog."""
+    query = query.strip().casefold()
+    if not query:
+        return []
+    prefix = [title for folded, title in searchable_titles if folded.startswith(query)]
+    if len(prefix) >= limit:
+        return prefix[:limit]
+    matches = prefix + [
+        title for folded, title in searchable_titles
+        if not folded.startswith(query) and query in folded
+    ]
+    return matches[:limit]
 
 
 def display_year(value):
@@ -78,7 +98,7 @@ st.markdown('''<div class="hero">
 </div>''', unsafe_allow_html=True)
 
 try:
-    movies, tfidf_matrix = load_data()
+    movies, tfidf_matrix, searchable_titles, title_to_index = load_data()
 except FileNotFoundError as error:
     st.error(f"Required project file not found: {error.filename}")
     st.stop()
@@ -87,10 +107,18 @@ except Exception as error:
     st.stop()
 
 st.markdown('<div class="search-label">What have you been watching?</div>', unsafe_allow_html=True)
-titles = movies["title"].dropna().drop_duplicates().sort_values(key=lambda values: values.str.casefold()).tolist()
-selected_title = st.selectbox("Search movies", titles, index=None, placeholder="Type a movie title…", label_visibility="collapsed")
+query = st.text_input("Search movies", placeholder="Type a movie title…", label_visibility="collapsed")
+matches = find_title_matches(searchable_titles, query)
+selected_title = None
+if query.strip() and matches:
+    selected_title = st.selectbox(
+        "Matching movies", matches, index=None,
+        placeholder="Choose a movie…", label_visibility="collapsed",
+    )
+elif query.strip():
+    st.caption("No matching titles found.")
 if selected_title:
-    selected_index = int(movies.index[movies["title"] == selected_title][0])
+    selected_index = title_to_index[selected_title]
     movie = movies.iloc[selected_index]
     rating = f"★ {movie['vote_average']:.1f}" if pd.notna(movie.get("vote_average")) and float(movie["vote_average"]) > 0 else "Unrated"
     year = display_year(movie.get("release_date"))
@@ -100,9 +128,12 @@ if selected_title:
       <div class="metadata">{year} &nbsp; · &nbsp; {rating}</div>
     </div>''', unsafe_allow_html=True)
 
-    scores = cosine_similarity(tfidf_matrix[selected_index], tfidf_matrix).ravel()
+    # TfidfVectorizer stores L2-normalized rows, so their dot product is cosine
+    # similarity. Keep the multiplication sparse until the one score row is needed.
+    scores = tfidf_matrix[selected_index].dot(tfidf_matrix.T).toarray().ravel()
     scores[selected_index] = -1
-    best = scores.argsort()[-5:][::-1]
+    best = np.argpartition(scores, -5)[-5:]
+    best = best[np.argsort(scores[best])[::-1]]
     st.markdown('<div class="section-title">Made for your watchlist</div><div class="section-sub">Movies with a similar feel, picked from our library.</div>', unsafe_allow_html=True)
     columns = st.columns(2, gap="medium")
     for rank, index in enumerate(best, start=1):
@@ -110,7 +141,7 @@ if selected_title:
         value = recommendation.get("vote_average")
         rating_text = f"★ {float(value):.1f}" if pd.notna(value) and float(value) > 0 else "Unrated"
         movie_year = display_year(recommendation.get("release_date"))
-        score = scores[index]
+        score = max(0, float(scores[index]))
         with columns[(rank - 1) % 2]:
             st.markdown(f'''<div class="movie-card">
               <div class="rank">PICK 0{rank}<span class="score">{score:.0%} match</span></div>
