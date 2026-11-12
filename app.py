@@ -1,15 +1,15 @@
 from pathlib import Path
-import pickle
+import json
 import re
+import sqlite3
+from contextlib import closing
 
-import pandas as pd
 import streamlit as st
-from sklearn.metrics.pairwise import cosine_similarity
 
 
 ROOT = Path(__file__).resolve().parent
-MOVIES_PATH = ROOT / "dataset" / "final_movies.csv"
-MATRIX_PATH = ROOT / "models" / "tfidf_matrix.pkl"
+RECOMMENDATIONS_PATH = ROOT / "models" / "recommendations.sqlite"
+DATABASE_URI = f"{RECOMMENDATIONS_PATH.as_uri()}?mode=ro"
 
 st.set_page_config(
     page_title="W4R SNIPER · Movie Finder",
@@ -19,17 +19,49 @@ st.set_page_config(
 )
 
 
-@st.cache_resource(show_spinner="Loading the movie library…")
-def load_data():
-    movies = pd.read_csv(MOVIES_PATH)
-    with MATRIX_PATH.open("rb") as file:
-        matrix = pickle.load(file)
-    movies["title"] = movies["title"].fillna("Untitled")
-    return movies, matrix
+def open_database():
+    return sqlite3.connect(DATABASE_URI, uri=True)
+
+
+@st.cache_data(show_spinner="Loading movie titles…")
+def load_titles():
+    with closing(open_database()) as connection:
+        return [row[0] for row in connection.execute(
+            "SELECT DISTINCT title FROM movies ORDER BY title COLLATE NOCASE"
+        )]
+
+
+@st.cache_data
+def load_movie_and_recommendations(title):
+    with closing(open_database()) as connection:
+        movie = connection.execute(
+            """SELECT movie_index, title, release_date, vote_average, recommendations
+               FROM movies WHERE title = ? ORDER BY movie_index LIMIT 1""",
+            (title,),
+        ).fetchone()
+        if movie is None:
+            return None, []
+
+        movie_index, movie_title, release_date, vote_average, raw_recommendations = movie
+        recommendations = json.loads(raw_recommendations)
+        recommendation_indices = [int(item[0]) for item in recommendations]
+        placeholders = ",".join("?" for _ in recommendation_indices)
+        rows = connection.execute(
+            f"""SELECT movie_index, title, release_date, vote_average
+                FROM movies WHERE movie_index IN ({placeholders})""",
+            recommendation_indices,
+        ).fetchall() if recommendation_indices else []
+
+    by_index = {row[0]: row for row in rows}
+    picks = [
+        (*by_index[index], float(score))
+        for index, score in recommendations if index in by_index
+    ]
+    return (movie_index, movie_title, release_date, vote_average), picks
 
 
 def display_year(value):
-    if pd.isna(value):
+    if value is None or value == "":
         return "Year unavailable"
     match = re.match(r"\s*(\d{4})", str(value))
     return match.group(1) if match else "Year unavailable"
@@ -78,7 +110,9 @@ st.markdown('''<div class="hero">
 </div>''', unsafe_allow_html=True)
 
 try:
-    movies, tfidf_matrix = load_data()
+    if not RECOMMENDATIONS_PATH.exists():
+        raise FileNotFoundError(RECOMMENDATIONS_PATH)
+    titles = load_titles()
 except FileNotFoundError as error:
     st.error(f"Required project file not found: {error.filename}")
     st.stop()
@@ -87,34 +121,28 @@ except Exception as error:
     st.stop()
 
 st.markdown('<div class="search-label">What have you been watching?</div>', unsafe_allow_html=True)
-titles = movies["title"].dropna().drop_duplicates().sort_values(key=lambda values: values.str.casefold()).tolist()
 selected_title = st.selectbox("Search movies", titles, index=None, placeholder="Type a movie title…", label_visibility="collapsed")
 if selected_title:
-    selected_index = int(movies.index[movies["title"] == selected_title][0])
-    movie = movies.iloc[selected_index]
-    rating = f"★ {movie['vote_average']:.1f}" if pd.notna(movie.get("vote_average")) and float(movie["vote_average"]) > 0 else "Unrated"
-    year = display_year(movie.get("release_date"))
+    movie, recommendations = load_movie_and_recommendations(selected_title)
+    _, movie_title, release_date, vote_average = movie
+    rating = f"★ {float(vote_average):.1f}" if vote_average is not None and float(vote_average) > 0 else "Unrated"
+    year = display_year(release_date)
     st.markdown(f'''<div class="selected">
       <div class="eyebrow">Your pick</div>
-      <div class="selected-title">{selected_title}</div>
+      <div class="selected-title">{movie_title}</div>
       <div class="metadata">{year} &nbsp; · &nbsp; {rating}</div>
     </div>''', unsafe_allow_html=True)
 
-    scores = cosine_similarity(tfidf_matrix[selected_index], tfidf_matrix).ravel()
-    scores[selected_index] = -1
-    best = scores.argsort()[-5:][::-1]
     st.markdown('<div class="section-title">Made for your watchlist</div><div class="section-sub">Movies with a similar feel, picked from our library.</div>', unsafe_allow_html=True)
     columns = st.columns(2, gap="medium")
-    for rank, index in enumerate(best, start=1):
-        recommendation = movies.iloc[index]
-        value = recommendation.get("vote_average")
-        rating_text = f"★ {float(value):.1f}" if pd.notna(value) and float(value) > 0 else "Unrated"
-        movie_year = display_year(recommendation.get("release_date"))
-        score = scores[index]
+    for rank, recommendation in enumerate(recommendations, start=1):
+        index, title, movie_release_date, value, score = recommendation
+        rating_text = f"★ {float(value):.1f}" if value is not None and float(value) > 0 else "Unrated"
+        movie_year = display_year(movie_release_date)
         with columns[(rank - 1) % 2]:
             st.markdown(f'''<div class="movie-card">
               <div class="rank">PICK 0{rank}<span class="score">{score:.0%} match</span></div>
-              <div class="movie-title">{recommendation['title']}</div>
+              <div class="movie-title">{title}</div>
               <div class="movie-meta">{movie_year} &nbsp; · &nbsp; {rating_text}</div>
             </div>''', unsafe_allow_html=True)
 else:
