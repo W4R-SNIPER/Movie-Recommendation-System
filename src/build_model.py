@@ -1,3 +1,7 @@
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
 import pandas as pd
 import pickle
 
@@ -6,7 +10,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 print("Loading dataset...")
 
-movies = pd.read_csv("../dataset/final_movies.csv")
+movies = pd.read_csv(ROOT / "data" / 'clean_movies.csv')
 
 print("Dataset shape:", movies.shape)
 
@@ -27,20 +31,20 @@ print("TF-IDF matrix shape:", tfidf_matrix.shape)
 
 print("\nSaving TF-IDF model...")
 
-with open("../models/tfidf_vectorizer.pkl", "wb") as file:
+with open(ROOT / "models" / 'tfidf_vectorizer.pkl', "wb") as file:
     pickle.dump(tfidf, file)
 
 
 print("Saving TF-IDF matrix...")
 
-with open("../models/tfidf_matrix.pkl", "wb") as file:
+with open(ROOT / "models" / 'tfidf_matrix.pkl', "wb") as file:
     pickle.dump(tfidf_matrix, file)
 
 
 print("\nModel files saved successfully!")
 
-print("../models/tfidf_vectorizer.pkl")
-print("../models/tfidf_matrix.pkl")
+print(ROOT / "models" / 'tfidf_vectorizer.pkl')
+print(ROOT / "models" / 'tfidf_matrix.pkl')
 
 print("\nNo full similarity matrix was created.")
 print("Similarity will be calculated only when a movie is searched.")

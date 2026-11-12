@@ -1,6 +1,10 @@
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
 import pandas as pd
 
-movies = pd.read_csv("../dataset/movies_metadata.csv", low_memory=False)
+movies = pd.read_csv(ROOT / "data" / 'movies_metadata.csv', low_memory=False)
 
 print("Original dataset shape:", movies.shape)
 
@@ -34,6 +38,6 @@ print(movies.isnull().sum())
 print("\nFirst 5 rows:")
 print(movies.head())
 
-movies.to_csv("../dataset/clean_movies.csv", index=False)
+movies.to_csv(ROOT / "data" / 'clean_movies.csv', index=False)
 
 print("\nClean dataset saved successfully!")

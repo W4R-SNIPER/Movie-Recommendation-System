@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090c0a">
+  <title>KNN Explorer · Movie Finder</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body data-mode="knn">
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">🎬</span><span>FRAME<span style="color:var(--accent)">FINDER</span></span></a>
+      <nav class="nav-links" aria-label="Recommendation mode">
+        <a class="nav-link" href="/">Story match</a>
+        <a class="nav-link active" href="/knn" aria-current="page">KNN explorer</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <span class="eyebrow">A different way to discover</span>
+      <h1>Find your kind<br>of <span class="highlight">movie.</span></h1>
+      <p class="hero-copy">Explore nearby films by genre and rating, starting with a favorite or building your own taste profile.</p>
+    </section>
+
+    <main class="workspace">
+      <div class="mode-tabs" role="tablist" aria-label="KNN recommendation type">
+        <button class="mode-tab active" type="button" role="tab" aria-selected="true" aria-controls="movie-panel" data-tab="movie">By movie</button>
+        <button class="mode-tab" type="button" role="tab" aria-selected="false" aria-controls="profile-panel" data-tab="profile">By taste profile</button>
+      </div>
+
+      <form id="recommend-form" novalidate>
+        <section class="panel" id="movie-panel" data-panel="movie" role="tabpanel" aria-label="Choose a movie">
+          <label class="field-label" for="movie-title">Pick a movie you like</label>
+          <div class="search-wrap">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <input class="text-input" id="movie-title" type="text" placeholder="Search a movie title…" autocomplete="off" aria-autocomplete="list" aria-controls="suggestions" aria-expanded="false">
+            <button class="clear-input" id="clear-title" type="button" aria-label="Clear movie title">×</button>
+            <div class="suggestions" id="suggestions" role="listbox" aria-label="Movie suggestions" hidden></div>
+          </div>
+          <p class="field-hint">We’ll find the closest movies by rating and genre.</p>
+        </section>
+
+        <section class="panel" id="profile-panel" data-panel="profile" role="tabpanel" aria-label="Build a taste profile" hidden>
+          <span class="field-label">Choose genres you enjoy</span>
+          <div class="genre-list">
+            {% for genre in genres %}<label class="genre-chip"><input class="genre-input" type="checkbox" value="{{ genre }}">{{ genre }}</label>{% endfor %}
+          </div>
+          <div class="range-row"><label class="field-label" for="target-rating" style="margin:0">Target IMDb rating</label><span class="range-value" id="rating-value">7.5</span></div>
+          <input id="target-rating" type="range" min="5" max="9.5" step="0.1" value="7.5">
+          <p class="field-hint">Choose a rating range and any genres; both are optional.</p>
+        </section>
+
+        <div class="field-grid">
+          <div><label class="field-label" for="result-count">Number of picks</label><select class="select-input" id="result-count"><option value="3">3 movies</option><option value="5" selected>5 movies</option><option value="10">10 movies</option><option value="20">20 movies</option></select></div>
+          <div><label class="field-label" for="distance-metric">Distance metric</label><select class="select-input" id="distance-metric"><option value="euclidean">Euclidean distance</option><option value="cosine">Cosine distance</option></select></div>
+        </div>
+        <div class="actions"><button class="primary-button" id="recommend-button" type="submit"><span class="button-spinner" aria-hidden="true"></span><span class="button-label">Find recommendations</span><span aria-hidden="true">→</span></button></div>
+      </form>
+      <p class="status" id="status" aria-live="polite"></p>
+      <ol class="results" id="results" aria-label="Recommended movies"></ol>
+      <p class="footer-note">KNN compares scaled movie ratings and genre matches.</p>
+    </main>
+  </div>
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
+</html>

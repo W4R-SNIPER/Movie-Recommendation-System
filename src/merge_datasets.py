@@ -1,8 +1,12 @@
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
 import pandas as pd
 
-movies = pd.read_csv("../dataset/clean_movies.csv")
-credits = pd.read_csv("../dataset/credits.csv")
-keywords = pd.read_csv("../dataset/keywords.csv")
+movies = pd.read_csv(ROOT / "data" / 'clean_movies.csv')
+credits = pd.read_csv(ROOT / "data" / 'credits.csv')
+keywords = pd.read_csv(ROOT / "data" / 'keywords.csv')
 
 print("Movies:", movies.shape)
 print("Credits:", credits.shape)
@@ -64,7 +68,7 @@ print(
 )
 
 movies.to_csv(
-    "../dataset/merged_movies.csv",
+    ROOT / "data" / 'merged_movies.csv',
     index=False
 )
 

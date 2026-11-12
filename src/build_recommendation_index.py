@@ -1,4 +1,4 @@
-"""Build the small, queryable movie catalog used by the Streamlit app.
+"""Build the small, queryable movie catalog used by the Flask app.
 
 Run from the project root with:
     python src/build_recommendation_index.py
@@ -18,7 +18,7 @@ import pandas as pd
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MOVIES_PATH = ROOT / "dataset" / "final_movies.csv"
+MOVIES_PATH = ROOT / "data" / "clean_movies.csv"
 MATRIX_PATH = ROOT / "models" / "tfidf_matrix.pkl"
 OUTPUT_PATH = ROOT / "models" / "recommendations.sqlite"
 TEMP_PATH = OUTPUT_PATH.with_suffix(".sqlite.tmp")

@@ -1,14 +1,19 @@
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+import ast
 import pandas as pd
 
 
-movies = pd.read_csv("../dataset/feature_movies.csv")
+movies = pd.read_csv(ROOT / "data" / 'feature_movies.csv')
 
 
 def convert_to_string(value):
     try:
-        items = eval(value)
-        return " ".join(items)
-    except:
+        items = ast.literal_eval(value) if isinstance(value, str) else []
+        return " ".join(str(item) for item in items)
+    except (ValueError, SyntaxError, TypeError):
         return ""
 
 
@@ -44,16 +49,16 @@ movies = movies[
 ]
 
 
-movies.to_csv("../dataset/final_movies.csv", index=False)
+movies.to_csv(ROOT / "data" / 'final_movies.csv', index=False)
 
 
 print("Tags created successfully!")
 
-print("\nFirst movie:")
-print("Title:", movies.iloc[0]["title"])
-
-print("\nTags:")
-print(movies.iloc[0]["tags"])
+if not movies.empty:
+    print("\nFirst movie:")
+    print("Title:", movies.iloc[0]["title"])
+    print("\nTags:")
+    print(movies.iloc[0]["tags"])
 
 print("\nFinal dataset shape:", movies.shape)
 

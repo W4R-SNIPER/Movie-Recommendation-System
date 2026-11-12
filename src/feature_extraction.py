@@ -1,14 +1,18 @@
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
 import pandas as pd
 import ast
 
 
-movies = pd.read_csv("../dataset/merged_movies.csv")
+movies = pd.read_csv(ROOT / "data" / 'merged_movies.csv')
 
 
 def convert_to_list(value):
     try:
         return [item["name"] for item in ast.literal_eval(value)]
-    except:
+    except (ValueError, SyntaxError, TypeError, KeyError):
         return []
 
 
@@ -16,7 +20,7 @@ def get_top_cast(value):
     try:
         cast = ast.literal_eval(value)
         return [item["name"] for item in cast[:5]]
-    except:
+    except (ValueError, SyntaxError, TypeError, KeyError):
         return []
 
 
@@ -29,7 +33,7 @@ def get_director(value):
                 return [item["name"]]
 
         return []
-    except:
+    except (ValueError, SyntaxError, TypeError, KeyError):
         return []
 
 
@@ -67,15 +71,16 @@ movies = movies[
 
 print("Feature extraction completed!")
 
-print("\nFirst movie:")
-print("Title:", movies.iloc[0]["title"])
-print("Genres:", movies.iloc[0]["genres"])
-print("Keywords:", movies.iloc[0]["keywords"])
-print("Cast:", movies.iloc[0]["cast"])
-print("Director:", movies.iloc[0]["director"])
+if not movies.empty:
+    print("\nFirst movie:")
+    print("Title:", movies.iloc[0]["title"])
+    print("Genres:", movies.iloc[0]["genres"])
+    print("Keywords:", movies.iloc[0]["keywords"])
+    print("Cast:", movies.iloc[0]["cast"])
+    print("Director:", movies.iloc[0]["director"])
 
 
-movies.to_csv("../dataset/feature_movies.csv", index=False)
+movies.to_csv(ROOT / "data" / 'feature_movies.csv', index=False)
 
 print("\nFeature dataset saved successfully!")
 print("Shape:", movies.shape)
