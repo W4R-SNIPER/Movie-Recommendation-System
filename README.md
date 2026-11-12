@@ -24,7 +24,9 @@ recommendations by movie or by rating and genre profile, with Euclidean or
 cosine distance. Its endpoints are `/api/knn/recommend` and
 `/api/knn/profile`.
 
-Run the checks with `python -m pytest`.
+For tests and offline model/index rebuilding, install the additional development
+dependencies with `python -m pip install -r requirements-dev.txt`. Then run
+checks with `python -m pytest`.
 
 ## Rebuild the model index
 
