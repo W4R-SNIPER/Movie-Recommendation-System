@@ -15,7 +15,7 @@ movies = pd.read_csv(ROOT / "data" / 'clean_movies.csv')
 
 print("Loading TF-IDF matrix...")
 
-with open(ROOT / "models" / 'tfidf_matrix.pkl', "rb") as file:
+with open(ROOT / "data" / 'tfidf_matrix.pkl', "rb") as file:
     tfidf_matrix = pickle.load(file)
 
 

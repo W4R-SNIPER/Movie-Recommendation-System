@@ -3,3 +3,7 @@ __pycache__/
 .venv/
 .pytest_cache/
 .ipynb_checkpoints/
+
+# Offline rebuild artifacts
+data/tfidf_*.pkl
+data/*.sqlite.tmp

@@ -1,8 +1,9 @@
 # Movie Recommendation System
 
 This Flask app serves precomputed content based recommendations from
-`models/recommendations.sqlite`. Movie text features are stored in
-`data/clean_movies.csv`, with the TF-IDF matrix in `models/tfidf_matrix.pkl`.
+`data/recommendations.sqlite`. Movie text features are stored in
+`data/clean_movies.csv`. The SQLite index is required at runtime and must be
+included in deployments. TF-IDF pickle files are only needed for offline rebuilding.
 
 ## Run locally
 

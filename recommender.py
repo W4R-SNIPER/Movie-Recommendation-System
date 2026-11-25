@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 
 
-DATABASE_PATH = Path(__file__).resolve().parent / "models" / "recommendations.sqlite"
+DATABASE_PATH = Path(__file__).resolve().parent / "data" / "recommendations.sqlite"
 DATASET_PATH = Path(__file__).resolve().parent / "data" / "clean_movies.csv"
 
 

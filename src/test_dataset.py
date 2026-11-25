@@ -8,7 +8,7 @@ import pandas as pd
 
 
 DATASET_PATH = Path(__file__).resolve().parents[1] / "data" / "clean_movies.csv"
-INDEX_PATH = Path(__file__).resolve().parents[1] / "models" / "recommendations.sqlite"
+INDEX_PATH = Path(__file__).resolve().parents[1] / "data" / "recommendations.sqlite"
 
 
 def test_clean_dataset_has_unique_movie_ids_and_titles():

@@ -19,8 +19,8 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 MOVIES_PATH = ROOT / "data" / "clean_movies.csv"
-MATRIX_PATH = ROOT / "models" / "tfidf_matrix.pkl"
-OUTPUT_PATH = ROOT / "models" / "recommendations.sqlite"
+MATRIX_PATH = ROOT / "data" / "tfidf_matrix.pkl"
+OUTPUT_PATH = ROOT / "data" / "recommendations.sqlite"
 TEMP_PATH = OUTPUT_PATH.with_suffix(".sqlite.tmp")
 TOP_K = 5
 BATCH_SIZE = 64
