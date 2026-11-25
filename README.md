@@ -7,7 +7,9 @@ This Flask app serves precomputed content based recommendations from
 ## Run locally
 
 ```powershell
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
+python src/tfidf_model.py
+python src/build_recommendation_index.py
 python app.py
 ```
 
@@ -34,3 +36,13 @@ Run `python src/tfidf_model.py` to regenerate the TF-IDF model, then run
 `python src/build_recommendation_index.py` to update the SQLite index. Both
 commands read the canonical dataset and resolve project paths from their own
 file locations.
+
+## Deploy on Render
+
+The build command in `render.yaml` generates `models/recommendations.sqlite`
+before Gunicorn imports the app. For a service configured in the Render
+Dashboard, set its Build Command to the same command:
+
+```sh
+python -m pip install -r requirements-dev.txt && python src/tfidf_model.py && python src/build_recommendation_index.py
+```

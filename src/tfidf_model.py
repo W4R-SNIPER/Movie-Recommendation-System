@@ -19,7 +19,7 @@ tfidf = TfidfVectorizer(
 )
 
 
-tfidf_matrix = tfidf.fit_transform(movies["tags"])
+tfidf_matrix = tfidf.fit_transform(movies["tags"].fillna(""))
 
 
 print("\nTF-IDF vectorization completed!")
@@ -28,11 +28,14 @@ print("Number of movies:", tfidf_matrix.shape[0])
 print("Number of features:", tfidf_matrix.shape[1])
 
 
-with open(ROOT / "models" / 'tfidf_vectorizer.pkl', "wb") as file:
+models_path = ROOT / "models"
+models_path.mkdir(exist_ok=True)
+
+with (models_path / "tfidf_vectorizer.pkl").open("wb") as file:
     pickle.dump(tfidf, file)
 
 
-with open(ROOT / "models" / 'tfidf_matrix.pkl', "wb") as file:
+with (models_path / "tfidf_matrix.pkl").open("wb") as file:
     pickle.dump(tfidf_matrix, file)
 
 

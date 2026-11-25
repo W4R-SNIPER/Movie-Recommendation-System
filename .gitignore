@@ -3,3 +3,7 @@ __pycache__/
 .venv/
 .pytest_cache/
 .ipynb_checkpoints/
+/models/recommendations.sqlite
+/models/recommendations.sqlite.tmp
+/models/tfidf_matrix.pkl
+/models/tfidf_vectorizer.pkl

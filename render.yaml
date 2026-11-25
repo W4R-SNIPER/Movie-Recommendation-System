@@ -3,6 +3,6 @@ services:
     name: movie-recommender
     runtime: python
     plan: free
-    buildCommand: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
+    buildCommand: python -m pip install -r requirements-dev.txt && python src/tfidf_model.py && python src/build_recommendation_index.py
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 90
     healthCheckPath: /health
