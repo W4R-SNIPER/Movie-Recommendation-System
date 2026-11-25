@@ -1,5 +1,6 @@
 (() => {
   const $ = (selector, root = document) => root.querySelector(selector);
+  const mode = document.body.dataset.mode;
   const input = $("#movie-title");
   const suggestionBox = $("#suggestions");
   const clearButton = $("#clear-title");
@@ -36,7 +37,7 @@
     if (searchController) searchController.abort();
     searchController = new AbortController();
     try {
-      const params = new URLSearchParams({q: query});
+      const params = new URLSearchParams({q: query, mode});
       const response = await fetch(`/api/search?${params}`, {signal: searchController.signal});
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Title search failed");
@@ -89,7 +90,11 @@
     label.textContent = `PICK 0${index + 1}`;
     const score = document.createElement("span");
     score.className = "result-score";
-    score.textContent = `Distance ${Number(movie.distance).toFixed(4)}`;
+    if (mode === "knn") {
+      score.textContent = `Distance ${Number(movie.distance).toFixed(4)}`;
+    } else {
+      score.textContent = `${(Number(movie.similarity) * 100).toFixed(1)}% match`;
+    }
     top.append(label, score);
 
     const title = document.createElement("h2");
@@ -100,8 +105,13 @@
     meta.className = "result-meta";
     const rating = Number(movie.rating);
     const ratingText = Number.isFinite(rating) && rating > 0 ? `★ ${rating.toFixed(1)}` : "Unrated";
-    const genres = Array.isArray(movie.genres) && movie.genres.length ? movie.genres.join(" · ") : "No genres listed";
-    meta.textContent = `${genres}  ·  ${ratingText}`;
+    if (mode === "knn") {
+      const genres = Array.isArray(movie.genres) && movie.genres.length ? movie.genres.join(" · ") : "No genres listed";
+      meta.textContent = `${genres}  ·  ${ratingText}`;
+    } else {
+      const year = (movie.release_date || "").slice(0, 4) || "Year unavailable";
+      meta.textContent = `${year}  ·  ${ratingText}`;
+    }
     item.append(top, title, meta);
     results.append(item);
   }
@@ -124,8 +134,8 @@
         return;
       }
       params.set("movie", title);
-      params.set("metric", $("#distance-metric").value);
-      endpoint = "/api/knn/recommend";
+      if (mode === "knn") params.set("metric", $("#distance-metric").value);
+      endpoint = mode === "knn" ? "/api/knn/recommend" : "/api/recommend";
     } else {
       params.set("rating", $("#target-rating").value);
       params.set("genres", [...document.querySelectorAll(".genre-input:checked")].map(control => control.value).join(","));

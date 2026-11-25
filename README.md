@@ -1,8 +1,8 @@
 # Movie Recommendation System
 
-A Flask app that recommends movies using KNN over scaled ratings and genre flags.
-Start with a favorite movie or build a taste profile. Both Euclidean and cosine
-distance are supported, with up to 20 recommendations per request.
+This Flask app serves precomputed content based recommendations from
+`models/recommendations.sqlite`. Movie text features are stored in
+`data/clean_movies.csv`, with the TF-IDF matrix in `models/tfidf_matrix.pkl`.
 
 ## Run locally
 
@@ -11,22 +11,26 @@ python -m pip install -r requirements.txt
 python app.py
 ```
 
-Open `http://127.0.0.1:5000`. The `/knn` URL also opens the KNN page.
-The app reads `data/clean_movies.csv` directly; no model files or SQLite database
-are required.
+Open `http://127.0.0.1:5000`. Search for a title in the page or call
+`/api/recommend?movie=Toy%20Story`. The index contains five recommendations per
+movie; the API lets you request up to five. These story-based recommendations
+use precomputed cosine similarity.
 
-## API
+Both pages use live title suggestions, so the full catalog is not embedded in
+the HTML response.
 
-- `/api/search?q=toy` — up to eight title suggestions.
-- `/api/knn/recommend?movie=Toy%20Story&k=5&metric=euclidean`
-- `/api/knn/profile?rating=7.5&genres=Comedy&k=5&metric=cosine`
-- `/health` — health check.
+The separate KNN page is available at `http://127.0.0.1:5000/knn`. It supports
+recommendations by movie or by rating and genre profile, with Euclidean or
+cosine distance. Its endpoints are `/api/knn/recommend` and
+`/api/knn/profile`.
 
-## Tests
+For tests and offline model/index rebuilding, install the additional development
+dependencies with `python -m pip install -r requirements-dev.txt`. Then run
+checks with `python -m pytest`.
 
-```powershell
-python -m pip install -r requirements-dev.txt
-python -m pytest
-```
+## Rebuild the model index
 
-Render uses the build and start commands in `render.yaml`.
+Run `python src/tfidf_model.py` to regenerate the TF-IDF model, then run
+`python src/build_recommendation_index.py` to update the SQLite index. Both
+commands read the canonical dataset and resolve project paths from their own
+file locations.

@@ -1,14 +1,84 @@
-"""KNN movie recommendations from the movie dataset."""
+"""Read movie recommendations from the precomputed SQLite index."""
 
-import csv
 import json
+import sqlite3
+import csv
 import math
 from bisect import bisect_left
 from pathlib import Path
 
 import numpy as np
 
+
+DATABASE_PATH = Path(__file__).resolve().parent / "models" / "recommendations.sqlite"
 DATASET_PATH = Path(__file__).resolve().parent / "data" / "clean_movies.csv"
+
+
+class MovieRecommender:
+    def __init__(self, path=DATABASE_PATH):
+        self.path = Path(path)
+        if not self.path.is_file():
+            raise FileNotFoundError(f"Recommendation database not found: {self.path}")
+        with self._connect() as connection:
+            connection.execute("SELECT 1 FROM movies LIMIT 1").fetchone()
+
+    def _connect(self):
+        return sqlite3.connect(f"file:{self.path.as_posix()}?mode=ro", uri=True)
+
+    def titles(self):
+        with self._connect() as connection:
+            return [row[0] for row in connection.execute(
+                "SELECT DISTINCT title FROM movies ORDER BY title COLLATE NOCASE"
+            )]
+
+    def search_titles(self, query, limit=8):
+        query = str(query).strip()
+        if not query:
+            return []
+        limit = max(1, min(int(limit), 12))
+        escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        with self._connect() as connection:
+            prefix = [row[0] for row in connection.execute(
+                "SELECT DISTINCT title FROM movies WHERE title LIKE ? ESCAPE '\\' "
+                "ORDER BY title COLLATE NOCASE LIMIT ?",
+                (escaped + "%", limit),
+            )]
+            if prefix:
+                return prefix
+            return [row[0] for row in connection.execute(
+                "SELECT DISTINCT title FROM movies WHERE title LIKE ? ESCAPE '\\' "
+                "ORDER BY title COLLATE NOCASE LIMIT ?",
+                ("%" + escaped + "%", limit),
+            )]
+
+    def recommend(self, title, k=5, metric="cosine"):
+        if metric != "cosine":
+            raise ValueError("Only the precomputed cosine metric is available")
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT movie_index, recommendations FROM movies "
+                "WHERE title = ? COLLATE NOCASE ORDER BY movie_index LIMIT 1",
+                (title.strip(),),
+            ).fetchone()
+            if row is None:
+                raise KeyError(title)
+            movie_index, raw_recommendations = row
+            picks = json.loads(raw_recommendations)[:k]
+            if not picks:
+                return []
+            placeholders = ",".join("?" for _ in picks)
+            rows = connection.execute(
+                f"SELECT movie_index, title, release_date, vote_average FROM movies "
+                f"WHERE movie_index IN ({placeholders})",
+                [pick[0] for pick in picks],
+            ).fetchall()
+        by_index = {movie[0]: movie for movie in rows}
+        return [
+            {"id": index, "name": by_index[index][1],
+             "release_date": by_index[index][2], "rating": by_index[index][3],
+             "similarity": round(float(score), 4)}
+            for index, score in picks if index != movie_index and index in by_index
+        ]
 
 
 class GenreKNNRecommender:
