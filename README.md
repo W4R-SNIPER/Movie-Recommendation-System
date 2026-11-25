@@ -39,9 +39,11 @@ file locations.
 
 ## Deploy on Render
 
-The build command in `render.yaml` generates `models/recommendations.sqlite`
-before Gunicorn imports the app. For a service configured in the Render
-Dashboard, set its Build Command to the same command:
+The repository includes `models/recommendations.sqlite`, so an existing Render
+service can install `requirements.txt` and start Gunicorn. When the movie dataset
+or TF-IDF settings change, rebuild and commit the updated SQLite index.
+
+The build command in `render.yaml` also regenerates the index before startup:
 
 ```sh
 python -m pip install -r requirements-dev.txt && python src/tfidf_model.py && python src/build_recommendation_index.py
