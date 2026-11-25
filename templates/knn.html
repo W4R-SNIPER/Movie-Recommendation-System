@@ -7,18 +7,15 @@
   <title>KNN Explorer · Movie Finder</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
 </head>
-<body data-mode="knn">
+<body>
   <div class="shell">
     <header class="topbar">
       <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">🎬</span><span>FRAME<span style="color:var(--accent)">FINDER</span></span></a>
-      <nav class="nav-links" aria-label="Recommendation mode">
-        <a class="nav-link" href="/">Story match</a>
-        <a class="nav-link active" href="/knn" aria-current="page">KNN explorer</a>
-      </nav>
+
     </header>
 
     <section class="hero">
-      <span class="eyebrow">A different way to discover</span>
+      <span class="eyebrow">Discover your next favorite</span>
       <h1>Find your kind<br>of <span class="highlight">movie.</span></h1>
       <p class="hero-copy">Explore nearby films by genre and rating, starting with a favorite or building your own taste profile.</p>
     </section>

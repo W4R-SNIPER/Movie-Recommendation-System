@@ -29,10 +29,6 @@ a { color: inherit; }
 .topbar { display:flex; justify-content:space-between; align-items:center; gap:20px; }
 .brand { display:inline-flex; align-items:center; gap:10px; color:var(--text); text-decoration:none; font:800 15px/1 "Segoe UI",Inter,system-ui,sans-serif; letter-spacing:-.35px; }
 .brand-mark { display:grid; place-items:center; width:36px; height:36px; border:1px solid #ffffff16; border-radius:11px; background:var(--surface-raised); font-size:18px; }
-.nav-links { display:flex; gap:6px; padding:4px; border:1px solid var(--line); border-radius:999px; background:#0c100d9c; }
-.nav-link { display:inline-flex; align-items:center; min-height:36px; padding:0 14px; border-radius:999px; color:var(--muted); text-decoration:none; font-size:13px; font-weight:600; transition:background .18s,color .18s; }
-.nav-link:hover { color:var(--text); background:var(--surface-hover); }
-.nav-link.active { color:var(--accent-ink); background:var(--accent); }
 .hero { max-width:720px; margin:66px auto 34px; text-align:center; }
 .eyebrow { display:inline-flex; align-items:center; gap:8px; color:var(--accent); text-transform:uppercase; letter-spacing:2px; font-size:10px; font-weight:700; }
 .eyebrow::before { width:18px; height:1px; background:var(--accent); content:""; }
@@ -73,9 +69,6 @@ h1 .highlight { color:var(--accent); }
 .suggestion small { color:var(--muted); font-size:11px; }
 .field-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:20px; }
 .select-input { min-height:48px; padding:0 14px; cursor:pointer; }
-.method-indicator { display:flex; align-items:center; gap:9px; min-height:48px; padding:0 14px; border:1px solid var(--line); border-radius:12px; color:#dce5d6; background:#0d110e; font-size:13px; }
-.method-indicator span:last-child { margin-left:auto; color:var(--muted); font-size:11px; }
-.method-dot { width:7px; height:7px; border-radius:50%; background:var(--accent); box-shadow:0 0 10px #c7f36b80; }
 .range-row { display:flex; align-items:center; justify-content:space-between; margin:18px 0 8px; }
 .range-value { color:var(--accent); font-weight:700; font-variant-numeric:tabular-nums; }
 input[type="range"] { display:block; width:100%; height:22px; accent-color:var(--accent); cursor:pointer; }

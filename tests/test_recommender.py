@@ -10,31 +10,27 @@ def test_home_and_health():
     assert client.get("/health").json == {"status": "ok"}
 
 
-def test_live_title_search_is_limited_and_mode_aware():
+def test_live_title_search_is_limited():
     client = app.test_client()
-    story = client.get("/api/search?mode=story&q=toy")
-    knn = client.get("/api/search?mode=knn&q=toy")
-    assert story.status_code == 200
-    assert knn.status_code == 200
-    assert "Toy Story" in story.get_json()["titles"]
-    assert "Toy Story" in knn.get_json()["titles"]
-    assert client.get("/api/search?mode=bad&q=toy").status_code == 400
-
-
-def test_recommendations_use_precomputed_cosine_index():
-    response = app.test_client().get("/api/recommend?movie=Toy%20Story")
+    response = client.get("/api/search?q=toy")
     assert response.status_code == 200
-    payload = response.get_json()
-    assert payload["recommendations"]
-    assert payload["recommendations"][0]["name"] == "Toy Story 2"
-    assert all(movie["name"] != "Toy Story" for movie in payload["recommendations"])
+    assert "Toy Story" in response.json["titles"]
+    assert len(response.json["titles"]) <= 8
+    assert client.get("/api/search?q=").json == {"titles": []}
+
+
+def test_story_match_is_removed():
+    client = app.test_client()
+    assert b"Story match" not in client.get("/").data
+    assert b"By taste profile" in client.get("/").data
+    assert client.get("/api/recommend?movie=Toy%20Story").status_code == 404
 
 
 def test_invalid_requests_return_client_errors():
     client = app.test_client()
-    assert client.get("/api/recommend?movie=not-a-movie").status_code == 404
-    assert client.get("/api/recommend?movie=Toy%20Story&metric=euclidean").status_code == 400
-    assert client.get("/api/recommend?movie=Toy%20Story&k=nope").status_code == 400
+    assert client.get("/api/knn/recommend?movie=not-a-movie").status_code == 404
+    assert client.get("/api/knn/recommend?movie=Toy%20Story&metric=invalid").status_code == 400
+    assert client.get("/api/knn/recommend?movie=Toy%20Story&k=nope").status_code == 400
 
 
 def test_knn_movie_and_profile_recommendations():
@@ -46,3 +42,14 @@ def test_knn_movie_and_profile_recommendations():
     assert all(movie["name"] != "Toy Story" for movie in by_movie.get_json()["recommendations"])
     assert by_profile.status_code == 200
     assert len(by_profile.get_json()["recommendations"]) == 3
+
+
+def test_knn_cosine_and_profile_validation():
+    client = app.test_client()
+    response = client.get("/api/knn/recommend?movie=Toy%20Story&metric=cosine&k=20")
+    assert response.status_code == 200
+    assert len(response.json["recommendations"]) == 20
+    distances = [movie["distance"] for movie in response.json["recommendations"]]
+    assert distances == sorted(distances)
+    assert client.get("/api/knn/profile?rating=nan").status_code == 400
+    assert client.get("/api/knn/profile?genres=invalid").status_code == 400
